@@ -1,15 +1,18 @@
 import * as k8s from "@pulumi/kubernetes";
 import * as kx from "@pulumi/kubernetesx";
 
-const appLabels = { app: "nginx" };
-const deployment = new k8s.apps.v1.Deployment("nginx", {
-    spec: {
-        selector: { matchLabels: appLabels },
-        replicas: 1,
-        template: {
-            metadata: { labels: appLabels },
-            spec: { containers: [{ name: "nginx", image: "nginx" }] }
-        }
-    }
+// Create a namespace.
+const ns = new k8s.core.v1.Namespace("argocd", {
+    metadata: {
+        name: "argocd",
+    },
 });
-export const name = deployment.metadata.name;
+
+const chart = new k8s.helm.v3.Chart('argocd', {
+    chart: 'argo-cd',
+    version: '5.25.0',
+    namespace: ns.metadata.name,
+    fetchOpts: {
+        repo: 'https://argoproj.github.io/argo-helm',
+    },
+})
